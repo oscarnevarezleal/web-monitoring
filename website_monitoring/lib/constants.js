@@ -1,0 +1,6 @@
+module.exports = {
+    CLOUDFRONT_DISTRIBUTION_DOMAIN: process.env.CLOUDFRONT_DISTRIBUTION_DOMAIN,
+    AWS_REGION: process.env.AWS_REGION,
+    S3_ASSETS_BUCKET_NAME: process.env.S3_ASSETS_BUCKET_NAME,
+    TOPIC_ARN: process.env.TOPIC_ARN
+}

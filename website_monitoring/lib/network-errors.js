@@ -8,7 +8,7 @@ const TIMEOUT_REG_EXP = /network timeout at: (.*)/gi
 
 
 const getUppercaseError = (e) => {
-    let regExpt = /[A-Z]+/;
+    let regExpt = /[A-Z]{4,}(?:_[A-Z]+)*/;
     return regExpt.test(e) ? regExpt.exec(e)[0] : null
 }
 
