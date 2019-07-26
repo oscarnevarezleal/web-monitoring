@@ -1,0 +1,6 @@
+There has been an error trying to reach the host {{& hostname }}
+Host may be unavailable or bad configured
+
+--
+
+{{& Message }}

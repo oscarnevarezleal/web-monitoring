@@ -9,6 +9,10 @@ const fetch = require('node-fetch');
 // loggin is important
 const debug = require('debug')('monitoring');
 
+const utils = require('./lib/utils');
+const networkError = require('./lib/network-errors');
+const view = require('./lib/view');
+
 // We define the urls that this script will attempt to check
 const URLS = process.env.DOMAINS ? JSON.parse(process.env.DOMAINS) : [
     'http://www.google.com',
@@ -30,19 +34,39 @@ AWS.config.update({region: AWS_REGION});
 const FETCH_TIMEOUT = process.env.FETCH_TIMEOUT || 50
 const FETCH_FOLLOW = process.env.FETCH_FOLLOW || 20
 
-async function publishMessageToSNS(error_level, Message, error) {
+const requestSettings = {
+    FETCH_TIMEOUT,
+    FETCH_FOLLOW
+}
 
-    debug('publishMessageToSNS', error_level, Message)
+/**
+ *
+ * @param error_level
+ * @param error
+ * @returns {Promise<void>}
+ */
+async function publishMessageToSNS(error_level, error) {
+
+    let requestDate = new Date()
+    let Message = error.message
+    let networkErrorObj = networkError.parse(Message)
+    let urlsOnMessage = utils.extractUrls(Message);
+    let sourceUrl = urlsOnMessage[0]
+    let viewData = {...sourceUrl, Message, networkErrorObj, requestDate, requestSettings}
+
+    Message = await view.format(networkErrorObj.code, viewData)
+    //let ErrorName = error.name.toUpperCase() + ":" + networkErrorObj.code
+    //debug('publishMessageToSNS', Message)
 
     // Create publish parameters
     let params = {
         Message,
+        Subject: 'Website monitor issue',
         TopicArn: TOPIC_ARN
     };
 
     // Return promise and SNS service object
-
-    return await new AWS.SNS({apiVersion: '2010-03-31'}).publish(params).promise();
+    // return await new AWS.SNS({apiVersion: '2010-03-31'}).publish(params).promise();
 }
 
 module.exports.monitor = async event => {
@@ -56,14 +80,18 @@ module.exports.monitor = async event => {
 
     // All the urls are mapped as resources promises
 
-    let promises = URLS.map(async (value, index, array) => {
-        return await fetch(value, Object.assign({method: 'GET'}, requestOptions))
+    let promises = URLS.map(async (url, index, array) => {
+        return await fetch(url, Object.assign({method: 'GET'}, requestOptions))
     })
 
     // Explanation: Promise.all is all or nothing so we map the rejection of every promise
     // So we can handle it appropriately, we also handle then all the results
 
-    Promise.all(promises.map(p => p.catch(async e => await publishMessageToSNS('FATAL', e.message, e))))
+    Promise.all(
+        promises.map(p =>
+            p.catch(async e =>
+                await publishMessageToSNS('FATAL', e))
+        ))
         .then(async results => debug("res", results)) // Every result including errors
         .catch(async e => debug("catch", e));
 

@@ -1,0 +1,7 @@
+This is not a simulation, something is happening with site {{& hostname }}
+The monitor found a delay just above the configured default timeout ({{& requestSettings.FETCH_TIMEOUT }} ms)
+Subsequents intents would be executed after this.
+
+--
+
+{{& Message }}
