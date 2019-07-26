@@ -47,15 +47,20 @@ module.exports.monitor = async event => {
 
     let promises = URLS.map(async (url, index, array) => {
         return new Promise(async (resolve, reject) => {
-            let response = await fetch(url, Object.assign({method: 'GET'}, requestOptions))
-            // debug("response.status ", response.status)
-            if (response.status !== 200) {
-                let code = `HTTP_INVALID_CODE_STATUS`
-                let message = `request to ${url} failed, reason: ` +
-                    `The site respond with a ${response.status} http header when 200 was expected. ${code}`
-                reject({code, message, response, url})
+            try {
+                let response = await fetch(url, Object.assign({method: 'GET'}, requestOptions))
+                // debug("response.status ", response.status)
+                if (response.status !== 200) {
+                    let code = `HTTP_INVALID_CODE_STATUS`
+                    let message = `request to ${url} failed, reason: ` +
+                        `The site respond with a ${response.status} http header when 200 was expected. ${code}`
+                    reject({code, message, response, url})
+                }
+                return response
+            } catch (e) {
+                let code = e.code
+                reject({code, message: e.message, response: null, url})
             }
-            return response
         })
     })
 

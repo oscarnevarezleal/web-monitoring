@@ -9,6 +9,6 @@ module.exports = {
     extractUrls: (e) => {
         const regExp = /(https?\:\/\/)?([^\.\s]+)?[^\.\s]+\.[^\s]+/gi
         const matches = regExp.exec(e)
-        return matches ? matches.map(e => url.parse(e)) : null
+        return matches && matches.length ? matches.map(e => e ? url.parse(e) : {}) : null
     }
 }

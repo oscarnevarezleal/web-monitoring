@@ -1,0 +1,9 @@
+ECONNREFUSED – Connection refused by server
+
+There has been an error trying to reach the host {{& hostname }}
+Host may be unavailable or bad configured
+
+--
+
+{{& Message }}
+Further detail can be found at http://{{& constants.CLOUDFRONT_DISTRIBUTION_DOMAIN}}

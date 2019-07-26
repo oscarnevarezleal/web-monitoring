@@ -52,28 +52,20 @@ custom:
 #    variable1: value1
 
 # you can add packaging information here
-#package:
-#  include:
-#    - include-me.js
-#    - include-me-dir/**
-#  exclude:
-#    - exclude-me.js
-#    - exclude-me-dir/**
+package:
+  excludeDevDependencies: false
+  include:
+    - node_modules/**
+    - lib/**
+    - views/**
+  exclude:
+    - wp/**
 
 functions:
   monitorFunction:
     handler: handler.monitor
     role: myDefaultRole
-    #    The following are a few example events you can configure
-    #    NOTE: Please make sure to change your handler code to work with those events
-    #    Check the event documentation for details
     events:
-      #      - http:
-      #          path: users/create
-      #          method: get
-      #      - websocket: $connect
-      #      - s3: ${env:BUCKET}
-      #      - schedule: rate(10 minutes)
       - schedule:
           name: monitor-scheduled-rate-event
           description: 'monitor scheduler running every 5 minutes'
@@ -88,32 +80,6 @@ functions:
             S3_ASSETS_BUCKET_NAME: !Ref MonitoringAssetsBucket
             stageParams:
               stage: dev
-      #      - sns: greeter-topic
-      #      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-      #      - alexaSkill: amzn1.ask.skill.xx-xx-xx-xx
-      #      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
-      #      - iot:
-      #          sql: "SELECT * FROM 'some_topic'"
-      #      - cloudwatchEvent:
-      #          event:
-      #            source:
-      #              - "aws.ec2"
-      #            detail-type:
-      #              - "EC2 Instance State-change Notification"
-      #            detail:
-      #              state:
-      #                - pending
-      # - cloudwatchLog: '/aws/lambda/website-monitoring'
-    #      - cognitoUserPool:
-    #          pool: MyUserPool
-    #          trigger: PreSignUp
-    #      - alb:
-    #          listenerArn: arn:aws:elasticloadbalancing:us-east-1:XXXXXX:listener/app/my-load-balancer/50dc6c495c0c9188/
-    #          priority: 1
-    #          conditions:
-    #            host: example.com
-    #            path: /hello
-
     #    Define function environment variables here
     environment:
       SES_EMAIL: consulting@onevarez.com
@@ -199,18 +165,18 @@ resources:
                 HTTPPort: '80'
                 HTTPSPort: '443'
                 OriginProtocolPolicy: http-only
-#              S3OriginConfig:
-#                OriginAccessIdentity: origin-access-identity/cloudfront/E127EXAMPLE51Z
+          #              S3OriginConfig:
+          #                OriginAccessIdentity: origin-access-identity/cloudfront/E127EXAMPLE51Z
           Enabled: 'true'
           Comment: Web monitoring status page distribution
           DefaultRootObject: index.html
-#          Logging:
-#            IncludeCookies: 'false'
-#            Bucket: mylogs.s3.amazonaws.com
-#            Prefix: myprefix
-#          Aliases:
-#            - mysite.example.com
-#            - yoursite.example.com
+          #          Logging:
+          #            IncludeCookies: 'false'
+          #            Bucket: mylogs.s3.amazonaws.com
+          #            Prefix: myprefix
+          #          Aliases:
+          #            - mysite.example.com
+          #            - yoursite.example.com
           DefaultCacheBehavior:
             AllowedMethods:
               - DELETE
@@ -225,21 +191,19 @@ resources:
               QueryString: 'false'
               Cookies:
                 Forward: none
-#            TrustedSigners:
-#              - 1234567890EX
-#              - 1234567891EX
+            #            TrustedSigners:
+            #              - 1234567890EX
+            #              - 1234567891EX
             ViewerProtocolPolicy: allow-all
           PriceClass: PriceClass_200
-#          Restrictions:
-#            GeoRestriction:
-#              RestrictionType: whitelist
-#              Locations:
-#                - AQ
-#                - CV
+          #          Restrictions:
+          #            GeoRestriction:
+          #              RestrictionType: whitelist
+          #              Locations:
+          #                - AQ
+          #                - CV
           ViewerCertificate:
             CloudFrontDefaultCertificate: 'true'
-
-    ### PART ONE: Create SNS Topic and SQS Queues
 
     # Create our SNS Topic
     monitoringSnsTopic:
@@ -263,8 +227,6 @@ resources:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: ${self:service}-${self:provider.stage}-first-queue-dlq
-
-    ### PART TWO: Create SQS Queue Policies
 
     # Create our queue policy for the 'firstQueue'
     snsToFirstQueueSqsPolicy:
