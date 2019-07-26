@@ -21,6 +21,7 @@ const URLS = process.env.DOMAINS ? JSON.parse(process.env.DOMAINS) : [
 ];
 
 // there is no default for this environment variables, they need to exist
+const S3_ASSETS_BUCKET_NAME = process.env.S3_ASSETS_BUCKET_NAME
 const AWS_REGION = process.env.AWS_REGION
 const TOPIC_ARN = process.env.TOPIC_ARN
 
@@ -51,8 +52,8 @@ async function publishMessageToSNS(error_level, error) {
     let Message = error.message
     let networkErrorObj = networkError.parse(Message)
     let urlsOnMessage = utils.extractUrls(Message);
-    let sourceUrl = urlsOnMessage[0]
-    let viewData = {...sourceUrl, Message, networkErrorObj, requestDate, requestSettings}
+    let requestUrl = urlsOnMessage[0]
+    let viewData = {requestUrl, Message, networkErrorObj, requestDate, requestSettings}
 
     Message = await view.format(networkErrorObj.code, viewData)
     //let ErrorName = error.name.toUpperCase() + ":" + networkErrorObj.code
@@ -66,7 +67,40 @@ async function publishMessageToSNS(error_level, error) {
     };
 
     // Return promise and SNS service object
-    // return await new AWS.SNS({apiVersion: '2010-03-31'}).publish(params).promise();
+    const {MessageId, RequestId} = await new AWS.SNS({apiVersion: '2010-03-31'})
+        .publish(params)
+        .promise();
+
+    viewData.Message = Message
+
+    return viewData
+}
+
+/**
+ *
+ * @param results
+ * @returns {Promise<void>}
+ */
+async function publicMonitoringResults(results) {
+
+    // debug('publicMonitoringResults', results)
+
+    const s3 = new AWS.S3();
+
+    var bucketName = S3_ASSETS_BUCKET_NAME;
+    var keyName = "index.html"
+    var content = await view.format("LIST", {results})
+
+    var params = {Bucket: bucketName, Key: keyName, Body: content};
+
+    return new Promise((resolve, reject) => {
+        s3.putObject(params, (err, data) => {
+            if (err)
+                reject(err)
+            else
+                resolve("Successfully saved object to " + bucketName + "/" + keyName);
+        });
+    })
 }
 
 module.exports.monitor = async event => {
@@ -92,7 +126,7 @@ module.exports.monitor = async event => {
             p.catch(async e =>
                 await publishMessageToSNS('FATAL', e))
         ))
-        .then(async results => debug("res", results)) // Every result including errors
+        .then(async results => await publicMonitoringResults(results)) // Every result including errors
         .catch(async e => debug("catch", e));
 
     // Use this code if you don't use the http event with the LAMBDA-PROXY integration
