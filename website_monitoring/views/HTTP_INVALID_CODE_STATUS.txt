@@ -1,0 +1,8 @@
+The monitor was unable to access the website additionally a {{& error.response.status }} error was encountered
+Subsequents intents would be executed after this.
+
+--
+
+{{& Message }}
+Further detail can be found at http://{{& constants.CLOUDFRONT_DISTRIBUTION_DOMAIN}}
+

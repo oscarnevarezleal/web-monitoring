@@ -76,12 +76,16 @@ functions:
       #      - schedule: rate(10 minutes)
       - schedule:
           name: monitor-scheduled-rate-event
-          description: 'monitor scheduler running every 10 minutes'
-          rate: rate(10 minutes)
-          enabled: false
+          description: 'monitor scheduler running every 5 minutes'
+          rate: rate(5 minutes)
+          enabled: true
           input:
-            key1: value1
-            key2: value2
+            SES_EMAIL: consulting@onevarez.com
+            SQS_ARN: !Ref firstQueue
+            SNS_URI: !Ref monitoringSnsTopic
+            S3_ASSETS_BUCKET_ARN: !GetAtt MonitoringAssetsBucket.Arn
+            CLOUDFRONT_DISTRIBUTION_DOMAIN: !GetAtt [CloudFrontDistribution, DomainName]
+            S3_ASSETS_BUCKET_NAME: !Ref MonitoringAssetsBucket
             stageParams:
               stage: dev
       #      - sns: greeter-topic
@@ -116,6 +120,7 @@ functions:
       SQS_ARN: !Ref firstQueue
       SNS_URI: !Ref monitoringSnsTopic
       S3_ASSETS_BUCKET_ARN: !GetAtt MonitoringAssetsBucket.Arn
+      CLOUDFRONT_DISTRIBUTION_DOMAIN: !GetAtt [CloudFrontDistribution, DomainName]
       S3_ASSETS_BUCKET_NAME: !Ref MonitoringAssetsBucket
 
 # you can add CloudFormation resource templates here
@@ -197,7 +202,7 @@ resources:
 #              S3OriginConfig:
 #                OriginAccessIdentity: origin-access-identity/cloudfront/E127EXAMPLE51Z
           Enabled: 'true'
-          Comment: Some comment
+          Comment: Web monitoring status page distribution
           DefaultRootObject: index.html
 #          Logging:
 #            IncludeCookies: 'false'
