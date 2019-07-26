@@ -12,10 +12,16 @@ const readFile = util.promisify(fs.readFile)
  */
 const format = async (code, view) => {
 
+    // debug("format", code, view)
     return new Promise(function (resolve, reject) {
-        readFile(`./views/${code}.txt`, "utf8").then(file => {
-            resolve(template.render(file, view))
-        })
+        try {
+            readFile(`./views/${code}.txt`, "utf8").then(file => {
+                resolve(template.render(file, view))
+            })
+        } catch (e) {
+            reject(e)
+        }
+
     });
 }
 

@@ -6,7 +6,7 @@ const networkError = require('./network-errors');
 const view = require('./view');
 
 const constants = require('./constants')
-const {AWS_REGION, TOPIC_ARN, S3_ASSETS_BUCKET_NAME, CLOUDFRONT_DISTRIBUTION_DOMAIN} = constants
+const {AWS_REGION, TOPIC_ARN, S3_ASSETS_BUCKET_NAME} = constants
 
 debug('Using AwsConfig', {AWS_REGION, TOPIC_ARN})
 
@@ -34,9 +34,9 @@ async function publishMessageToSNS(error_level, error, data) {
     }
 
 
-    Message = await view.format(networkErrorObj.code, viewData)
+    Message = await view.format(networkErrorObj.code || error.code, viewData)
     //let ErrorName = error.name.toUpperCase() + ":" + networkErrorObj.code
-    debug('publishMessageToSNS', Message)
+    // debug('publishMessageToSNS', Message)
 
     // Create publish parameters
     let params = {
@@ -46,11 +46,11 @@ async function publishMessageToSNS(error_level, error, data) {
     };
 
     // Return promise and SNS service object
-    const {MessageId, RequestId} = await new AWS.SNS({apiVersion: '2010-03-31'})
-        .publish(params)
-        .promise();
+    //const {MessageId, RequestId} = await new AWS.SNS({apiVersion: '2010-03-31'})
+    //    .publish(params)
+    //    .promise();
 
-    viewData.Message = Message
+    //viewData.Message = Message
 
     return viewData
 }
@@ -62,7 +62,7 @@ async function publishMessageToSNS(error_level, error, data) {
  */
 async function publishMonitoringResults(results) {
 
-    // debug('publicMonitoringResults', results)
+    // debug('publishMonitoringResults', results)
 
     const s3 = new AWS.S3();
 

@@ -1,14 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Material Design for Bootstrap fonts and icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons">
+
+    <!-- Material Design for Bootstrap CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-material-design@4.1.1/dist/css/bootstrap-material-design.min.css" integrity="sha384-wXznGJNEXNG1NFsbm0ugrLFMQPWswR3lds2VeinahP8N0zJw9VWSopbjv2x7WCvX" crossorigin="anonymous">
+
+    <title>Monitoring Status Page</title>
 </head>
 <body>
-    <ul>
-        {{#results}}
-            <li><strong>{{& requestUrl.hostname }}</strong> {{& Message }}</li>
-        {{/results}}
-    </ul>
+
+<div class="container">
+      <!-- Content here -->
+
+    <h2>Monitoring status</h2>
+    <div class="table-responsive">
+        <table class="table table-striped table-sm">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Hostname</th>
+              <th>Description</th>
+              <th>Last check</th>
+            </tr>
+          </thead>
+          <tbody>
+              {{#results}}
+              <tr class="border-danger">
+                  {{#error}}
+                    <td><span class="badge badge-danger">Unheantly</span></td>
+                    <td><a href="http://{{& requestUrl.hostname }}">{{& requestUrl.hostname }}</a></td>
+                    <td>{{& error.code }} - {{& Message }}</td>
+                    <td>{{ requestDate }}</td>
+                  {{/error}}
+                  {{^error}}
+                    <td><span class="badge badge-success">Healty</span></td>
+                    <td><a href="http://{{& requestUrl.hostname }}">{{& requestUrl.hostname }}</a></td>
+                    <td>All Ok</td>
+                    <td>{{ requestDate }}</td>
+                  {{/error}}
+              </tr>
+              {{/results}}
+          </tbody>
+        </table>
+    </div>
+</div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/popper.js@1.12.6/dist/umd/popper.js" integrity="sha384-fA23ZRQ3G/J53mElWqVJEGJzU0sTs+SvzG8fXVWP+kJQ1lwFAOkcUOysnlKJC33U" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/bootstrap-material-design@4.1.1/dist/js/bootstrap-material-design.js" integrity="sha384-CauSuKpEqAFajSpkdjv3z9t8E7RlpJ1UP0lKM/+NdtSarroVKu069AlsRPKkFBz9" crossorigin="anonymous"></script>
+    <script>$(document).ready(function() { $('body').bootstrapMaterialDesign(); });</script>
+
 </body>
 </html>
