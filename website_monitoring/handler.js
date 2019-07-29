@@ -12,18 +12,20 @@ const {publishMessageToSNS, publishMonitoringResults} = require('./lib/awsOperat
 
 // We define the urls that this script will attempt to check
 
-// const {URLS} = constants
-const URLS = [
-    'http://onevares.com',
-    'http://onevaresadass.com',
-    'http://onevaresadas888s.com'
-]
+const {URLS} = require('./lib/constants')
+/**
+ const URLS = [
+ 'http://onevares.com',
+ 'http://onevaresadass.com',
+ 'http://onevaresadas888s.com'
+ ]
+ **/
 
 
 // In case we have environment variables for fetch optionsWe use library defaults
 // See here https://www.npmjs.com/package/node-fetch
 
-const FETCH_TIMEOUT = process.env.FETCH_TIMEOUT || 5000
+const FETCH_TIMEOUT = process.env.FETCH_TIMEOUT || 0
 const FETCH_FOLLOW = process.env.FETCH_FOLLOW || 20
 
 const requestSettings = {
@@ -50,12 +52,15 @@ module.exports.monitor = async event => {
     let promises = URLS.map(async (url, index, array) => {
         return new Promise(async (resolve, reject) => {
             let requestDate = new Date().toISOString()
+            let requestUrl = URL.parse(url)
             try {
                 let response = await fetch(url, Object.assign({method: 'GET'}, requestOptions))
-                // debug("response.status ", response.status)
-                if (response.status !== 200 &&
-                    (response.status !== 401) // these ones are ok
-                ) {
+                const bodyText = await response.text()
+
+                const allowedStatusCodes = [401, 301, 302, 200]
+                const validCode = allowedStatusCodes.includes(response.status)
+
+                if (!validCode) {
 
                     let code = `HTTP_INVALID_CODE_STATUS`
                     let message = `request to ${url} failed, reason: ` +
@@ -63,7 +68,23 @@ module.exports.monitor = async event => {
                     reject({code, message, response, requestDate, url})
                 }
 
-                resolve({response, requestDate, requestUrl: URL.parse(url)})
+                const invalidResponse = bodyText.indexOf("The site is experiencing technical difficulties") > -1 ||
+                bodyText.indexOf("tekniske utfordringer") > -1;
+                
+                // debug("response.invalidResponse ", invalidResponse)
+
+                if (invalidResponse) {
+                    let code = `GENERAL_ERROR`
+                    reject({
+                        code,
+                        message: "An error was found in the response",
+                        response: null,
+                        requestUrl,
+                        url
+                    })
+                }
+
+                resolve({response, requestDate, requestUrl})
 
             } catch (e) {
 

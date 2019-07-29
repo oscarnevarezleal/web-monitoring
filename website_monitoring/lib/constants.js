@@ -26,7 +26,6 @@ module.exports = {
         "http://easydays.me",
         "http://eavisa.com",
         "http://elfremdrift.no",
-        "http://fiddle.mementor.no",
         "http://freshnutri.no",
         "http://godost.no",
         "http://helgelandbetong.no",

@@ -1,1 +1,9 @@
-Certificate for {{& hostname }} has expired
+Certificate for {{& requestUrl.hostname }} has expired.
+
+This SSL Checker will help you diagnose problems with your SSL certificate installation.
+https://www.sslshopper.com/ssl-checker.html#hostname={{& requestUrl.hostname }}
+
+--
+
+{{& Message }}
+Further detail can be found at https://{{& constants.S3_ASSETS_BUCKET_NAME}}.s3.amazonaws.com/index.html

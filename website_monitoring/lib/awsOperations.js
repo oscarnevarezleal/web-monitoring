@@ -28,29 +28,33 @@ async function publishMessageToSNS(error_level, error, data) {
     let urlsOnMessage = utils.extractUrls(Message);
     let viewData = {...data, error, constants, Message, networkErrorObj, requestDate}
 
+    let Subject = (error.requestUrl ? error.requestUrl.host : 'website') + ' is down'
+
     if (urlsOnMessage) {
         let requestUrl = urlsOnMessage[0]
+        Subject = requestUrl.host + ' is down!'
         viewData = {...viewData, urlsOnMessage, requestUrl}
     }
 
 
     Message = await view.format(networkErrorObj.code || error.code, viewData)
+
     //let ErrorName = error.name.toUpperCase() + ":" + networkErrorObj.code
-    // debug('publishMessageToSNS', Message)
+    debug('publishMessageToSNS', Subject)
 
     // Create publish parameters
     let params = {
         Message,
-        Subject: 'Website monitor issue on ' + (viewData.hostname || viewData.error.url),
+        Subject,
         TopicArn: TOPIC_ARN
     };
 
     // Return promise and SNS service object
-    //const {MessageId, RequestId} = await new AWS.SNS({apiVersion: '2010-03-31'})
-    //    .publish(params)
-    //    .promise();
+    const {MessageId, RequestId} = await new AWS.SNS({apiVersion: '2010-03-31'})
+        .publish(params)
+        .promise();
 
-    //viewData.Message = Message
+    viewData.Message = Message
 
     return viewData
 }

@@ -25,6 +25,7 @@ provider:
 
   # you can overwrite defaults here
   stage: dev
+  profile: mortek
   region: us-east-1
   role: myDefaultRole
 
@@ -70,7 +71,7 @@ functions:
           name: monitor-scheduled-rate-event
           description: 'monitor scheduler running every 5 minutes'
           rate: rate(5 minutes)
-          enabled: true
+          enabled: false
           input:
             SES_EMAIL: consulting@onevarez.com
             SQS_ARN: !Ref firstQueue
@@ -92,7 +93,6 @@ functions:
 # you can add CloudFormation resource templates here
 resources:
   Resources:
-
     myDefaultRole:
       Type: AWS::IAM::Role
       Properties:

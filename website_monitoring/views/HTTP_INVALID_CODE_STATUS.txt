@@ -4,5 +4,5 @@ Subsequents intents would be executed after this.
 --
 
 {{& Message }}
-Further detail can be found at http://{{& constants.CLOUDFRONT_DISTRIBUTION_DOMAIN}}
+Further detail can be found at https://{{& constants.S3_ASSETS_BUCKET_NAME}}.s3.amazonaws.com/index.html
 
