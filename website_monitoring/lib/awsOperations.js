@@ -40,7 +40,6 @@ async function publishMessageToSNS(error_level, error, data) {
     Message = await view.format(networkErrorObj.code || error.code, viewData)
 
     //let ErrorName = error.name.toUpperCase() + ":" + networkErrorObj.code
-    debug('publishMessageToSNS', Subject)
 
     // Create publish parameters
     let params = {
@@ -48,6 +47,8 @@ async function publishMessageToSNS(error_level, error, data) {
         Subject,
         TopicArn: TOPIC_ARN
     };
+
+    // debug('publishMessageToSNS', params)
 
     // Return promise and SNS service object
     const {MessageId, RequestId} = await new AWS.SNS({apiVersion: '2010-03-31'})

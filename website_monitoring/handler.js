@@ -13,14 +13,6 @@ const {publishMessageToSNS, publishMonitoringResults} = require('./lib/awsOperat
 // We define the urls that this script will attempt to check
 
 const {URLS} = require('./lib/constants')
-/**
- const URLS = [
- 'http://onevares.com',
- 'http://onevaresadass.com',
- 'http://onevaresadas888s.com'
- ]
- **/
-
 
 // In case we have environment variables for fetch optionsWe use library defaults
 // See here https://www.npmjs.com/package/node-fetch
@@ -39,6 +31,8 @@ const requestSettings = {
  * @returns {Promise<void>}
  */
 module.exports.monitor = async event => {
+
+    debug("Init processing")
 
     // Define our default request options
 
@@ -69,9 +63,9 @@ module.exports.monitor = async event => {
                 }
 
                 const invalidResponse = bodyText.indexOf("The site is experiencing technical difficulties") > -1 ||
-                bodyText.indexOf("tekniske utfordringer") > -1;
-                
-                // debug("response.invalidResponse ", invalidResponse)
+                    bodyText.indexOf("tekniske utfordringer") > -1;
+
+                debug("response.invalidResponse = ", invalidResponse)
 
                 if (invalidResponse) {
                     let code = `GENERAL_ERROR`
@@ -83,6 +77,8 @@ module.exports.monitor = async event => {
                         url
                     })
                 }
+
+                debug("Resolving", url)
 
                 resolve({response, requestDate, requestUrl})
 
@@ -97,7 +93,9 @@ module.exports.monitor = async event => {
     // Explanation: Promise.all is all or nothing so we map the rejection of every promise
     // So we can handle it appropriately, we also handle then all the results
 
-    Promise.all(
+    debug("Still processing")
+
+    return await Promise.all(
         promises.map(p =>
             p.catch(async e =>
                 await publishMessageToSNS('FATAL', e, {requestSettings}))
@@ -105,8 +103,4 @@ module.exports.monitor = async event => {
         .then(async results => await publishMonitoringResults(results.sort(r => r.error == null))) // Every result including errors
         .catch(async e => debug("catch", e));
 
-    // Use this code if you don't use the http event with the LAMBDA-PROXY integration
-    // return { message: 'Go Serverless v1.0! Your function executed successfully!', event };
 };
-
-module.exports.monitor();

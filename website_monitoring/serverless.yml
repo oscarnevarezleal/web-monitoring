@@ -70,11 +70,12 @@ functions:
       - schedule:
           name: monitor-scheduled-rate-event
           description: 'monitor scheduler running every 5 minutes'
-          rate: rate(5 minutes)
+          rate: rate(10 minutes)
           enabled: false
           input:
             SES_EMAIL: consulting@onevarez.com
             SQS_ARN: !Ref firstQueue
+            TOPIC_ARN: !Ref monitoringSnsTopic
             SNS_URI: !Ref monitoringSnsTopic
             S3_ASSETS_BUCKET_ARN: !GetAtt MonitoringAssetsBucket.Arn
             CLOUDFRONT_DISTRIBUTION_DOMAIN: !GetAtt [CloudFrontDistribution, DomainName]
@@ -83,8 +84,10 @@ functions:
               stage: dev
     #    Define function environment variables here
     environment:
+      DEBUG: 'monitoring'
       SES_EMAIL: consulting@onevarez.com
       SQS_ARN: !Ref firstQueue
+      TOPIC_ARN: !Ref monitoringSnsTopic
       SNS_URI: !Ref monitoringSnsTopic
       S3_ASSETS_BUCKET_ARN: !GetAtt MonitoringAssetsBucket.Arn
       CLOUDFRONT_DISTRIBUTION_DOMAIN: !GetAtt [CloudFrontDistribution, DomainName]
@@ -110,11 +113,20 @@ resources:
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
         Policies:
+          - PolicyName: snsPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - SNS:*
+                  Resource:
+                    - Ref: monitoringSnsTopic
           - PolicyName: myPolicyName
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
-                - Effect: Allow # note that these rights are given in the default policy and are required if you want logs out of your lambda(s)
+                - Effect: "Allow" # note that these rights are given in the default policy and are required if you want logs out of your lambda(s)
                   Action:
                     - logs:CreateLogGroup
                     - logs:CreateLogStream
@@ -138,7 +150,14 @@ resources:
     MonitoringAssetsBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: ${self:service}-${self:provider.stage}-monitoring-assets
+        BucketName:
+          'Fn::Join':
+            - '-'
+            - - ${self:service}
+              - Ref: 'AWS::Region'
+              - Ref: 'AWS::AccountId'
+              - ${self:provider.stage}
+              - "monitoring-assets"
         AccessControl: PublicRead
         WebsiteConfiguration:
           IndexDocument: index.html
