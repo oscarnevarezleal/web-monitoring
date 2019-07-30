@@ -117,4 +117,4 @@ module.exports.monitor = async event => {
 
 };
 
-module.exports.monitor();
+// module.exports.monitor();
