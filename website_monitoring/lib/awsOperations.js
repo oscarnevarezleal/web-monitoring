@@ -81,10 +81,35 @@ async function publishMonitoringResults(results) {
     await new Promise(async (resolve, reject) => {
         for (let i = 0; i < results.length; i++) {
             const value = results[i]
+            const hasError = value.hasOwnProperty('error')
+            const host = value.host
+            const domainStatus = await getCurrentDomainStatus(host)
+
+            // Here we handle back alive scenario
+            if (!hasError && domainStatus && domainStatus.last_status === STATUS.DOWN) {
+
+                debug(`${host} it was down but now it is alive !!`)
+
+                // Create publish parameters
+                let params = {
+                    Message,
+                    Subject: `${host} is back online.`,
+                    TopicArn: TOPIC_ARN
+                };
+
+                // Return promise and SNS service object
+                const {MessageId, RequestId} = await new AWS.SNS({apiVersion: '2010-03-31'})
+                    .publish(params)
+                    .promise();
+
+            }
+
+            // Update status on database
             const item = {
                 HostName: value.host,
-                LastStatus: value.hasOwnProperty('error') ? STATUS.DOWN : STATUS.UP
+                LastStatus: hasError ? STATUS.DOWN : STATUS.UP
             }
+
             await upsertCheck(AWS, item)
         }
         resolve()
@@ -133,7 +158,6 @@ const processFailedRequestResponse = async (error_level, error, data) => {
         }
 
         await upsertCheck(AWS, item)
-        await publishMessageToSNS(error_level, error, data)
 
     } else if (domainStatus.last_status === STATUS.UP) {
 
