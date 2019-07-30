@@ -4,9 +4,10 @@ const debug = require('debug')('monitoring');
 const utils = require('./utils');
 const networkError = require('./network-errors');
 const view = require('./view');
+const {upsertCheck, findByProperty} = require('./dynamoDB');
 
 const constants = require('./constants')
-const {AWS_REGION, TOPIC_ARN, S3_ASSETS_BUCKET_NAME} = constants
+const {AWS_REGION, TOPIC_ARN, S3_ASSETS_BUCKET_NAME, STATUS} = constants
 
 debug('Using AwsConfig', {AWS_REGION, TOPIC_ARN})
 
@@ -48,7 +49,7 @@ async function publishMessageToSNS(error_level, error, data) {
         TopicArn: TOPIC_ARN
     };
 
-    // debug('publishMessageToSNS', params)
+    debug('publishMessageToSNS', params)
 
     // Return promise and SNS service object
     const {MessageId, RequestId} = await new AWS.SNS({apiVersion: '2010-03-31'})
@@ -62,12 +63,32 @@ async function publishMessageToSNS(error_level, error, data) {
 
 /**
  *
+ * @param domain
+ * @returns {Promise<void>}
+ */
+async function getCurrentDomainStatus(domain) {
+    let results = await findByProperty(AWS, 'HostName', domain)
+    return results ? results.pop() : null
+}
+
+/**
+ *
  * @param results
  * @returns {Promise<void>}
  */
 async function publishMonitoringResults(results) {
 
-    // debug('publishMonitoringResults', results)
+    await new Promise(async (resolve, reject) => {
+        for (let i = 0; i < results.length; i++) {
+            const value = results[i]
+            const item = {
+                HostName: value.host,
+                LastStatus: value.hasOwnProperty('error') ? STATUS.DOWN : STATUS.UP
+            }
+            await upsertCheck(AWS, item)
+        }
+        resolve()
+    })
 
     const s3 = new AWS.S3();
 
@@ -87,9 +108,47 @@ async function publishMonitoringResults(results) {
             if (err)
                 reject(err)
             else
-                resolve("Successfully saved object to " + bucketName + "/" + keyName);
+                debug("Successfully saved object to " + bucketName + "/" + keyName);
         });
     })
 }
 
-module.exports = {publishMessageToSNS, publishMonitoringResults}
+/**
+ *
+ * @param error_level
+ * @param error
+ * @param data
+ */
+const processFailedRequestResponse = async (error_level, error, data) => {
+
+    let {host} = error
+
+    let domainStatus = await getCurrentDomainStatus(host)
+
+    if (!domainStatus) { // has never been registered
+
+        const item = {
+            HostName: host,
+            LastStatus: data.hasOwnProperty('error') ? STATUS.DOWN : STATUS.UP
+        }
+
+        await upsertCheck(AWS, item)
+        await publishMessageToSNS(error_level, error, data)
+
+    } else if (domainStatus.last_status === STATUS.UP) {
+
+        debug(`${host} it was up now it's down`)
+        // manage it
+        await publishMessageToSNS(error_level, error, data)
+
+    } else if (domainStatus.last_status === STATUS.DOWN) {
+
+        debug(`${host} it was down, yeah we know. Do not double inform about it`)
+
+    }
+
+    return data
+
+}
+
+module.exports = {processFailedRequestResponse, publishMonitoringResults}

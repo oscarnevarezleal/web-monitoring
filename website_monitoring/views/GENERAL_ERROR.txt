@@ -1,4 +1,4 @@
-Site is down: {{& error.requestUrl.hostname }}
+Site is down: {{& host }}
 
 --
 

@@ -16,10 +16,16 @@ const format = async (code, view) => {
     return new Promise(function (resolve, reject) {
         try {
             readFile(`./views/${code}.txt`, "utf8").then(file => {
-                resolve(template.render(file, view))
+                try {
+                    resolve(template.render(file, view))
+                } catch (e) {
+                    debug(e)
+                    reject("")
+                }
             })
         } catch (e) {
-            reject(e)
+            debug(e)
+            reject("")
         }
 
     });

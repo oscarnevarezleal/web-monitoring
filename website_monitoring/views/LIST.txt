@@ -34,13 +34,13 @@
               <tr class="border-danger">
                   {{#error}}
                     <td><span class="badge badge-danger">Unheantly</span></td>
-                    <td><a href="http://{{& requestUrl.hostname }}">{{& requestUrl.hostname }}</a></td>
-                    <td>{{& error.code }} - {{& Message }}</td>
+                    <td><a href="http://{{& host }}">{{& host }}</a></td>
+                    <td>{{& error.code }} - {{& message }}</td>
                     <td>{{ requestDate }}</td>
                   {{/error}}
                   {{^error}}
                     <td><span class="badge badge-success">Healty</span></td>
-                    <td><a href="http://{{& requestUrl.hostname }}">{{& requestUrl.hostname }}</a></td>
+                    <td><a href="http://{{& host }}">{{& host }}</a></td>
                     <td>All Ok</td>
                     <td>{{ requestDate }}</td>
                   {{/error}}

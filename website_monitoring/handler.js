@@ -8,7 +8,10 @@ const URL = require('url');
 const debug = require('debug')('monitoring');
 
 // Aws operations
-const {publishMessageToSNS, publishMonitoringResults} = require('./lib/awsOperations');
+const {
+    publishMonitoringResults,
+    processFailedRequestResponse
+} = require('./lib/awsOperations');
 
 // We define the urls that this script will attempt to check
 
@@ -47,6 +50,10 @@ module.exports.monitor = async event => {
         return new Promise(async (resolve, reject) => {
             let requestDate = new Date().toISOString()
             let requestUrl = URL.parse(url)
+            let sharedObj = {
+                requestDate,
+                host: requestUrl.hostname
+            }
             try {
                 let response = await fetch(url, Object.assign({method: 'GET'}, requestOptions))
                 const bodyText = await response.text()
@@ -59,18 +66,21 @@ module.exports.monitor = async event => {
                     let code = `HTTP_INVALID_CODE_STATUS`
                     let message = `request to ${url} failed, reason: ` +
                         `The site respond with a ${response.status} http header when 200 was expected. ${code}`
-                    reject({code, message, response, requestDate, url})
+                    reject({...sharedObj, code, message, response, url})
                 }
 
                 const invalidResponse = bodyText.indexOf("The site is experiencing technical difficulties") > -1 ||
                     bodyText.indexOf("tekniske utfordringer") > -1;
 
-                debug("response.invalidResponse = ", invalidResponse)
+                // debug("response.invalidResponse = ", invalidResponse)
 
                 if (invalidResponse) {
+                    let error = true
                     let code = `GENERAL_ERROR`
                     reject({
+                        error,
                         code,
+                        ...sharedObj,
                         message: "An error was found in the response",
                         response: null,
                         requestUrl,
@@ -78,14 +88,16 @@ module.exports.monitor = async event => {
                     })
                 }
 
-                debug("Resolving", url)
+                debug("Resolving " + (invalidResponse ? "[!]" : "OK"), url)
 
-                resolve({response, requestDate, requestUrl})
+                resolve({
+                    ...sharedObj, response, requestDate, requestUrl
+                })
 
             } catch (e) {
-
+                let error = true
                 let code = e.code
-                reject({code, message: e.message, response: null, url})
+                reject({...sharedObj, error, code, message: e.message, response: null, url})
             }
         })
     })
@@ -98,9 +110,11 @@ module.exports.monitor = async event => {
     return await Promise.all(
         promises.map(p =>
             p.catch(async e =>
-                await publishMessageToSNS('FATAL', e, {requestSettings}))
+                await processFailedRequestResponse('FATAL', e, {...e, requestSettings}))
         ))
-        .then(async results => await publishMonitoringResults(results.sort(r => r.error == null))) // Every result including errors
+        .then(async results => await publishMonitoringResults(results.sort(r => r.error === null))) // Every result including errors
         .catch(async e => debug("catch", e));
 
 };
+
+module.exports.monitor();

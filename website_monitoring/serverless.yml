@@ -31,6 +31,7 @@ provider:
 
 custom:
   region: ${opt:region, self:provider.region}
+    # define the ARN of the function that you want to invoke
 
 # you can add statements to the Lambda function's IAM Role here
 #  iamRoleStatements:
@@ -66,13 +67,15 @@ functions:
   monitorFunction:
     handler: handler.monitor
     role: myDefaultRole
+    timeout: 60 # optional, in seconds, default is 6
     events:
       - schedule:
           name: monitor-scheduled-rate-event
           description: 'monitor scheduler running every 5 minutes'
-          rate: rate(10 minutes)
+          rate: rate(2 minutes)
           enabled: false
           input:
+            DYNAMO_DB: !Ref MonitoringTable
             SES_EMAIL: consulting@onevarez.com
             SQS_ARN: !Ref firstQueue
             TOPIC_ARN: !Ref monitoringSnsTopic
@@ -85,6 +88,7 @@ functions:
     #    Define function environment variables here
     environment:
       DEBUG: 'monitoring'
+      DYNAMO_DB: !Ref MonitoringTable
       SES_EMAIL: consulting@onevarez.com
       SQS_ARN: !Ref firstQueue
       TOPIC_ARN: !Ref monitoringSnsTopic
@@ -146,7 +150,66 @@ resources:
                       - ""
                       - - "arn:aws:s3:::"
                         - "Ref": "MonitoringAssetsBucket"
-
+          - PolicyName: dynamoDBPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "dynamodb:DescribeTable"
+                    - "dynamodb:UpdateTable"
+                    - "cloudwatch:PutMetricAlarm"
+                    - "cloudwatch:DescribeAlarms"
+                    - "cloudwatch:GetMetricStatistics"
+                    - "cloudwatch:SetAlarmState"
+                    - "cloudwatch:DeleteAlarms"
+                  Resource: "*"
+    MonitoringTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "HostName"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "HostName"
+            KeyType: "HASH"
+        GlobalSecondaryIndexes:
+          - IndexName: "GSI"
+            KeySchema:
+              - AttributeName: "HostName"
+                KeyType: "HASH"
+            Projection:
+              ProjectionType: "KEYS_ONLY"
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+    WriteCapacityScalableTarget:
+      Type: AWS::ApplicationAutoScaling::ScalableTarget
+      Properties:
+        MaxCapacity: 15
+        MinCapacity: 5
+        ResourceId: !Join
+          - /
+          - - table
+            - !Ref MonitoringTable
+        RoleARN: !GetAtt myDefaultRole.Arn
+        ScalableDimension: dynamodb:table:WriteCapacityUnits
+        ServiceNamespace: dynamodb
+    WriteScalingPolicy:
+      Type: AWS::ApplicationAutoScaling::ScalingPolicy
+      Properties:
+        PolicyName: WriteAutoScalingPolicy
+        PolicyType: TargetTrackingScaling
+        ScalingTargetId: !Ref WriteCapacityScalableTarget
+        TargetTrackingScalingPolicyConfiguration:
+          TargetValue: 50.0
+          ScaleInCooldown: 60
+          ScaleOutCooldown: 60
+          PredefinedMetricSpecification:
+            PredefinedMetricType: DynamoDBWriteCapacityUtilization
     MonitoringAssetsBucket:
       Type: AWS::S3::Bucket
       Properties:

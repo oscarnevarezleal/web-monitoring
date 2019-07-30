@@ -44,11 +44,11 @@ npm i
 
 Running this on default profile
 ```
-serverless deploy --aws-profile mortek
+serverless deploy --aws-profile morten
 ```
 Running the installation script on a different profile (e.g mortek)
 ```
-serverless deploy --aws-profile mortek
+serverless deploy --aws-profile morten
 ```
 
 
@@ -57,3 +57,14 @@ serverless deploy --aws-profile mortek
 - SNS - We use SNS for email delivery
 - Lamba - A lambda function check regularly a list of sites defined in _constants.js_
 - Cloudfront - serves a monitoring HTML file from S3 bucket
+
+## FAQS
+
+#####How can I change the frequency of the monitor?
+This can be done by altering the rate on _Serverless.yml_ and re deploying the solution.
+e.g. 
+```rate: rate(X minutes)```
+
+
+#####How can I change the list of watched domains?
+The list can be defined either by editing the file _website_monitoring/lib/constants.js_ or setting up a environmental variable _DOMAINS_.
