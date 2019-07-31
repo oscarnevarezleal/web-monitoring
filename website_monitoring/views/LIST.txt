@@ -33,7 +33,7 @@
               {{#results}}
               <tr class="border-danger">
                   {{#error}}
-                    <td><span class="badge badge-danger">Unheantly</span></td>
+                    <td><span class="badge badge-danger">Unhealty</span></td>
                     <td><a href="http://{{& host }}">{{& host }}</a></td>
                     <td>{{& error.code }} - {{& message }}</td>
                     <td>{{ requestDate }}</td>

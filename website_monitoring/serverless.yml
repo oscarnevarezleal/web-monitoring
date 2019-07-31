@@ -72,11 +72,11 @@ functions:
       - schedule:
           name: monitor-scheduled-rate-event
           description: 'monitor scheduler running every 5 minutes'
-          rate: rate(2 minutes)
-          enabled: false
+          rate: rate(3 minutes)
+          enabled: true
           input:
             DYNAMO_DB: !Ref MonitoringTable
-            SES_EMAIL: consulting@onevarez.com
+            SES_EMAIL: uptime@mementor.no
             SQS_ARN: !Ref firstQueue
             TOPIC_ARN: !Ref monitoringSnsTopic
             SNS_URI: !Ref monitoringSnsTopic
@@ -89,7 +89,7 @@ functions:
     environment:
       DEBUG: 'monitoring'
       DYNAMO_DB: !Ref MonitoringTable
-      SES_EMAIL: consulting@onevarez.com
+      SES_EMAIL: uptime@mementor.no
       SQS_ARN: !Ref firstQueue
       TOPIC_ARN: !Ref monitoringSnsTopic
       SNS_URI: !Ref monitoringSnsTopic
@@ -144,12 +144,13 @@ resources:
                           - 'log-group:/aws/lambda/*:*:*'
                 - Effect: "Allow"
                   Action:
-                    - "s3:PutObject"
+                    - "s3:*"
                   Resource:
                     Fn::Join:
                       - ""
                       - - "arn:aws:s3:::"
                         - "Ref": "MonitoringAssetsBucket"
+                        - "/*"
           - PolicyName: dynamoDBPolicy
             PolicyDocument:
               Version: "2012-10-17"
@@ -158,6 +159,19 @@ resources:
                   Action:
                     - "dynamodb:DescribeTable"
                     - "dynamodb:UpdateTable"
+                    - "dynamodb:UpdateItem"
+                    - "dynamodb:Query"
+                    - "dynamodb:Get*"
+                  Resource: !Join
+                    - /
+                    - - "arn:aws:dynamodb:*:*:table"
+                      - !Ref MonitoringTable
+          - PolicyName: cloudwatchPolicy
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
                     - "cloudwatch:PutMetricAlarm"
                     - "cloudwatch:DescribeAlarms"
                     - "cloudwatch:GetMetricStatistics"

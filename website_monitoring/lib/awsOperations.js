@@ -88,7 +88,8 @@ async function publishMonitoringResults(results) {
             // Here we handle back alive scenario
             if (!hasError && domainStatus && domainStatus.last_status === STATUS.DOWN) {
 
-                debug(`${host} it was down but now it is alive !!`)
+                let Message = `${host} it was down but now it is alive !!`
+                debug(Message)
 
                 // Create publish parameters
                 let params = {
@@ -130,10 +131,13 @@ async function publishMonitoringResults(results) {
 
     return new Promise((resolve, reject) => {
         s3.putObject(params, (err, data) => {
-            if (err)
+            if (err) {
+                debug(`Writting to S3 Key ${bucketName}/${keyName} failed`, err);
                 reject(err)
-            else
-                debug("Successfully saved object to " + bucketName + "/" + keyName);
+            } else {
+                debug(`Successfully saved object using Key ${bucketName}/${keyName}`);
+                resolve(true)
+            }
         });
     })
 }

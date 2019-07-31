@@ -1,0 +1,9 @@
+ECONNRESET – Connection reset
+
+There has been an error trying to reach the host {{& hostname }}
+Host may be unavailable or bad configured.
+
+--
+
+{{& Message }}
+Further detail can be found at https://{{& constants.S3_ASSETS_BUCKET_NAME}}.s3.amazonaws.com/index.html

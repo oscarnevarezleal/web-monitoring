@@ -57,6 +57,7 @@ serverless deploy --aws-profile morten
 - SNS - We use SNS for email delivery
 - Lamba - A lambda function check regularly a list of sites defined in _constants.js_
 - Cloudfront - serves a monitoring HTML file from S3 bucket
+- DynamoDb is used to preserve the status of each domain
 
 ## FAQS
 
@@ -65,6 +66,14 @@ This can be done by altering the rate on _Serverless.yml_ and re deploying the s
 e.g. 
 ```rate: rate(X minutes)```
 
+#####How can I add multiple email subscribers to the Monitor status?
+By default just one email is subscribed when the solution is deployed. You can however, subscribe adittional emails bu following the next steps:
+- Go to **AWS Console** > **SNS service** > **Topics**
+- Click on the topic _website-monitoring-dev-monitoring-sns-topic_ topic
+- Create a **new Subscription** of type Email and specify the desired email address
+
 
 #####How can I change the list of watched domains?
 The list can be defined either by editing the file _website_monitoring/lib/constants.js_ or setting up a environmental variable _DOMAINS_.
+Then re-deploy the solution
+```serverless deploy --aws-profile morten```
