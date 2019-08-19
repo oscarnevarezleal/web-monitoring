@@ -89,7 +89,7 @@ async function publishMonitoringResults(results) {
             if (!hasError && domainStatus && domainStatus.last_status === STATUS.DOWN) {
 
                 let Message = `${host} it was down but now it is alive !!`
-                debug(Message)
+                debug(Message, value)
 
                 // Create publish parameters
                 let params = {
@@ -166,6 +166,14 @@ const processFailedRequestResponse = async (error_level, error, data) => {
     } else if (domainStatus.last_status === STATUS.UP) {
 
         debug(`${host} it was up now it's down`)
+
+        const item = {
+            HostName: host,
+            LastStatus: STATUS.DOWN
+        }
+
+        await upsertCheck(AWS, item)
+
         // manage it
         await publishMessageToSNS(error_level, error, data)
 

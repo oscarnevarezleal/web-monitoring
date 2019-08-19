@@ -66,7 +66,7 @@ module.exports.monitor = async event => {
                     let code = `HTTP_INVALID_CODE_STATUS`
                     let message = `request to ${url} failed, reason: ` +
                         `The site respond with a ${response.status} http header when 200 was expected. ${code}`
-                    reject({...sharedObj, code, message, response, url})
+                    reject({...sharedObj, code, message, response, error: true, url})
                 }
 
                 const invalidResponse = bodyText.indexOf("The site is experiencing technical difficulties") > -1 ||
@@ -75,10 +75,9 @@ module.exports.monitor = async event => {
                 // debug("response.invalidResponse = ", invalidResponse)
 
                 if (invalidResponse) {
-                    let error = true
                     let code = `GENERAL_ERROR`
                     reject({
-                        error,
+                        error: true,
                         code,
                         ...sharedObj,
                         message: "An error was found in the response",
