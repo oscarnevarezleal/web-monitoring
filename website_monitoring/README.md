@@ -71,7 +71,7 @@ By default just one email is subscribed when the solution is deployed. You can h
 - Go to **AWS Console** > **SNS service** > **Topics**
 - Click on the topic _website-monitoring-dev-monitoring-sns-topic_ topic
 - Create a **new Subscription** of type Email and specify the desired email address
-
+    
 
 #####How can I change the list of watched domains?
 The list can be defined either by editing the file _website_monitoring/lib/constants.js_ or setting up a environmental variable _DOMAINS_.
